@@ -140,6 +140,84 @@ describe("NotionPropertyBuilder", () => {
     })
   })
 
+  describe("relation property type", () => {
+    interface RelationRecord extends Record<string, unknown> {
+      exercisePageId: string
+      weekPageId?: string
+      tagPageIds: string[]
+    }
+
+    it("formats a single page ID as a one-item relation array", () => {
+      const record: RelationRecord = {
+        exercisePageId: "exercise-page-1",
+        tagPageIds: [],
+      }
+      const fields: Array<NotionFieldMapping<RelationRecord>> = [
+        { recordKey: "exercisePageId", propertyName: "種目", type: "relation" },
+      ]
+
+      const result = NotionPropertyBuilder.build(record, fields)
+
+      expect(result).toEqual({
+        種目: { relation: [{ id: "exercise-page-1" }] },
+      })
+    })
+
+    it("formats an array of page IDs as a multi-item relation array", () => {
+      const record: RelationRecord = {
+        exercisePageId: "exercise-page-1",
+        tagPageIds: ["tag-1", "tag-2"],
+      }
+      const fields: Array<NotionFieldMapping<RelationRecord>> = [
+        { recordKey: "tagPageIds", propertyName: "Tags", type: "relation" },
+      ]
+
+      const result = NotionPropertyBuilder.build(record, fields)
+
+      expect(result).toEqual({
+        Tags: { relation: [{ id: "tag-1" }, { id: "tag-2" }] },
+      })
+    })
+  })
+
+  describe("optional fields", () => {
+    interface OptionalRecord extends Record<string, unknown> {
+      weekPageId?: string
+    }
+
+    it("omits the property entirely when value is undefined and marked optional", () => {
+      const record: OptionalRecord = {}
+      const fields: Array<NotionFieldMapping<OptionalRecord>> = [
+        {
+          recordKey: "weekPageId",
+          propertyName: "週",
+          type: "relation",
+          optional: true,
+        },
+      ]
+
+      const result = NotionPropertyBuilder.build(record, fields)
+
+      expect(result).toEqual({})
+    })
+
+    it("still builds the property when an optional field has a value", () => {
+      const record: OptionalRecord = { weekPageId: "week-1" }
+      const fields: Array<NotionFieldMapping<OptionalRecord>> = [
+        {
+          recordKey: "weekPageId",
+          propertyName: "週",
+          type: "relation",
+          optional: true,
+        },
+      ]
+
+      const result = NotionPropertyBuilder.build(record, fields)
+
+      expect(result).toEqual({ 週: { relation: [{ id: "week-1" }] } })
+    })
+  })
+
   describe("error handling and edge cases", () => {
     it("should throw an error if a mapped record key is missing, undefined, or null", () => {
       const incompleteRecord = {

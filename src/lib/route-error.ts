@@ -2,10 +2,12 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { InvalidContactSubmissionError } from "@/core/domain/contact-submission.entity"
 import { InvalidMessageHistoryError } from "@/core/domain/message.validation"
+import { InvalidWorkoutLogError } from "@/core/domain/workout-log.entity"
 
 const DOMAIN_ERRORS = [
   InvalidContactSubmissionError,
   InvalidMessageHistoryError,
+  InvalidWorkoutLogError,
 ]
 
 export function handleRouteError(

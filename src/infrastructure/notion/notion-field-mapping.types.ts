@@ -7,6 +7,7 @@ export type NotionFieldType =
   | "files"
   | "checkbox"
   | "url"
+  | "relation"
 
 export type NotionFieldMapping<TRecord> = {
   /** Omit when using transform-only fields (e.g. derived title). */
@@ -14,6 +15,8 @@ export type NotionFieldMapping<TRecord> = {
   propertyName: string
   type: NotionFieldType
   transform?: (value: unknown, record: TRecord) => unknown
+  /** When true, a missing/undefined/null value skips this property instead of throwing. */
+  optional?: boolean
 }
 
 export type NotionDatabaseConfig<TRecord> = {

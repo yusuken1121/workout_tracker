@@ -26,4 +26,9 @@ export const FIELD_LABELS = {
   title: "タイトル",
   content: "コンテンツ",
   message: "メッセージ",
+  exercisePageId: "種目",
+  weightKg: "重量",
+  reps: "回数",
+  performedAt: "実施日",
+  notes: "感想",
 } as const

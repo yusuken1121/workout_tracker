@@ -2,11 +2,11 @@ import { Client } from "@notionhq/client"
 
 export class NotionClientFactory {
   static create(token?: string): Client {
-    const auth = token ?? process.env.NOTION_TOKEN
+    const auth = token ?? process.env.NOTION_API_KEY
 
     if (!auth) {
       throw new Error(
-        "NOTION_TOKEN is not set. Provide it via environment variable or constructor argument.",
+        "NOTION_API_KEY is not set. Provide it via environment variable or constructor argument.",
       )
     }
 

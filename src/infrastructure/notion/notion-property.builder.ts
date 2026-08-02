@@ -14,6 +14,11 @@ export class NotionPropertyBuilder {
 
     for (const field of fields) {
       const value = NotionPropertyBuilder.resolveValue(record, field)
+
+      if (field.optional && (value === undefined || value === null)) {
+        continue
+      }
+
       properties[field.propertyName] = NotionPropertyBuilder.toNotionProperty(
         field.type,
         value,
@@ -74,6 +79,10 @@ export class NotionPropertyBuilder {
         return {
           files: NotionPropertyBuilder.toFileEntries(value, propertyName),
         }
+      case "relation":
+        return {
+          relation: NotionPropertyBuilder.toRelationEntries(value),
+        }
       default: {
         const _exhaustive: never = type
         throw new Error(`Unsupported Notion field type: ${_exhaustive}`)
@@ -100,5 +109,10 @@ export class NotionPropertyBuilder {
         external: { url: href },
       }
     })
+  }
+
+  private static toRelationEntries(value: unknown): Array<{ id: string }> {
+    const pageIds = Array.isArray(value) ? value : [value]
+    return pageIds.map((id) => ({ id: String(id) }))
   }
 }

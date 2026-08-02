@@ -1,9 +1,9 @@
-import { ChatInterface } from "./_components/chat-interface"
+import { WorkoutLogForm } from "./_components/workout-log-form"
 
 export default function Home() {
   return (
     <>
-      <ChatInterface />
+      <WorkoutLogForm />
     </>
   )
 }

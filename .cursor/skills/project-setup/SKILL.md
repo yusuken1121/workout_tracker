@@ -63,14 +63,17 @@ VS Code / Cursor: `.vscode/settings.json` enables format-on-save with Prettier a
 
 ## Environment Variables
 
-| Variable                     | Required     | Description                            |
-| :--------------------------- | :----------- | :------------------------------------- |
-| `GEMINI_API_KEY`             | Yes (Chat)   | Google AI API key                      |
-| `NOTION_TOKEN`               | Yes (Notion) | Notion integration token               |
-| `NOTION_CONTACT_DATABASE_ID` | Yes (Notion) | Target Notion database ID              |
-| `NEXT_PUBLIC_API_URL`        | No           | API base URL (defaults to same origin) |
-| `NEXT_PUBLIC_USE_MOCK`       | No           | Set `"true"` to use mock API           |
-| `NEXT_PUBLIC_MOCK_API_URL`   | No           | Mock API base URL                      |
+| Variable                         | Required     | Description                                           |
+| :------------------------------- | :----------- | :---------------------------------------------------- |
+| `GEMINI_API_KEY`                 | Yes (Chat)   | Google AI API key                                     |
+| `NOTION_API_KEY`                 | Yes (Notion) | Notion integration token                              |
+| `NOTION_CONTACT_DATABASE_ID`     | Yes (Notion) | Contact form target database ID                       |
+| `NOTION_WORKOUT_LOG_DATABASE_ID` | Yes (Notion) | Workout Log (記録) database ID                        |
+| `NOTION_EXERCISE_DATA_SOURCE_ID` | Yes (Notion) | Exercises (種目) data source ID (read-only)           |
+| `NOTION_WEEK_DATA_SOURCE_ID`     | Yes (Notion) | Weekly Progress (週次記録) data source ID (read-only) |
+| `NEXT_PUBLIC_API_URL`            | No           | API base URL (defaults to same origin)                |
+| `NEXT_PUBLIC_USE_MOCK`           | No           | Set `"true"` to use mock API                          |
+| `NEXT_PUBLIC_MOCK_API_URL`       | No           | Mock API base URL                                     |
 
 See `.env.example` for the template.
 

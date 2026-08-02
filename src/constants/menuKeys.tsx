@@ -1,9 +1,18 @@
 import React from "react"
 import { PATH } from "@/constants/path"
-import { LogOutIcon, Mail, MessageSquare, Settings } from "lucide-react"
+import {
+  CalendarDays,
+  ChartLine,
+  Dumbbell,
+  LogOutIcon,
+  Mail,
+  Settings,
+} from "lucide-react"
 
 export const MENU_KEYS = {
-  CHAT: "chat",
+  WORKOUT_LOG: "workoutLog",
+  PROGRESS: "progress",
+  CALENDAR: "calendar",
   CONTACT: "contact",
   SETTINGS: "settings",
   LOGOUT: "logout",
@@ -20,11 +29,23 @@ export interface SidebarItemConfig {
 }
 
 export const SIDEBAR_CONFIG: Record<MenuKey, SidebarItemConfig> = {
-  [MENU_KEYS.CHAT]: {
-    label: "Chat",
+  [MENU_KEYS.WORKOUT_LOG]: {
+    label: "記録",
     path: PATH.HOME,
-    icon: <MessageSquare className="h-5 w-5" />,
+    icon: <Dumbbell className="h-5 w-5" />,
     activeColor: "text-blue-600 dark:text-blue-400",
+  },
+  [MENU_KEYS.PROGRESS]: {
+    label: "進捗",
+    path: PATH.PROGRESS,
+    icon: <ChartLine className="h-5 w-5" />,
+    activeColor: "text-orange-600 dark:text-orange-400",
+  },
+  [MENU_KEYS.CALENDAR]: {
+    label: "カレンダー",
+    path: PATH.CALENDAR,
+    icon: <CalendarDays className="h-5 w-5" />,
+    activeColor: "text-sky-600 dark:text-sky-400",
   },
   [MENU_KEYS.CONTACT]: {
     label: "Contact",
@@ -46,7 +67,12 @@ export const SIDEBAR_CONFIG: Record<MenuKey, SidebarItemConfig> = {
   },
 }
 
-export const mainSidebar: MenuKey[] = [MENU_KEYS.CHAT, MENU_KEYS.CONTACT]
+export const mainSidebar: MenuKey[] = [
+  MENU_KEYS.WORKOUT_LOG,
+  MENU_KEYS.PROGRESS,
+  MENU_KEYS.CALENDAR,
+  MENU_KEYS.CONTACT,
+]
 
 export const manageSidebar: MenuKey[] = [MENU_KEYS.SETTINGS]
 
