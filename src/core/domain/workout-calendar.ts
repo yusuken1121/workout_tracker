@@ -22,7 +22,9 @@ export interface WorkoutCalendarDay {
 }
 
 /** Total moved weight for one set: kg × reps. */
-export function setVolumeKg(set: Pick<WorkoutCalendarSet, "weightKg" | "reps">): number {
+export function setVolumeKg(
+  set: Pick<WorkoutCalendarSet, "weightKg" | "reps">,
+): number {
   return set.weightKg * set.reps
 }
 

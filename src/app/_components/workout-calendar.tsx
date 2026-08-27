@@ -228,7 +228,8 @@ export function WorkoutCalendar() {
                 </p>
               </div>
               <p className="text-muted-foreground col-span-2 text-[11px] leading-snug">
-                合計は各セットの kg × 回数 を足した総負荷量です。週は月曜始まりです。
+                合計は各セットの kg × 回数
+                を足した総負荷量です。週は月曜始まりです。
               </p>
             </div>
           )}
