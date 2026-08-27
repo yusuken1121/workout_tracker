@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { groupLogsIntoCalendarDays } from "./workout-calendar"
+import {
+  dayTotalVolumeKg,
+  groupLogsIntoCalendarDays,
+  totalVolumeKgInRange,
+} from "./workout-calendar"
 import type { WorkoutLogEntry } from "./workout-progress"
 
 describe("groupLogsIntoCalendarDays", () => {
@@ -79,5 +83,17 @@ describe("groupLogsIntoCalendarDays", () => {
     )
 
     expect(days[0].exercises[0].exerciseName).toBe("不明な種目")
+  })
+
+  it("sums day and week volume as kg × reps", () => {
+    const days = groupLogsIntoCalendarDays(entries, names)
+
+    // 60*8 + 65*5 + 100*5 = 480 + 325 + 500 = 1305
+    expect(dayTotalVolumeKg(days[0])).toBe(1305)
+    // 120*3 = 360
+    expect(dayTotalVolumeKg(days[1])).toBe(360)
+    expect(totalVolumeKgInRange(days, "2026-08-01", "2026-08-07")).toBe(1665)
+    expect(totalVolumeKgInRange(days, "2026-08-03", "2026-08-03")).toBe(360)
+    expect(totalVolumeKgInRange(days, "2026-08-10", "2026-08-16")).toBe(0)
   })
 })
