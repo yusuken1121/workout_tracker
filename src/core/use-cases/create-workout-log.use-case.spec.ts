@@ -39,6 +39,10 @@ describe("assertValidWorkoutLog", () => {
     )
   })
 
+  it("accepts fractional reps", () => {
+    expect(() => assertValidWorkoutLog({ ...valid, reps: 0.1 })).not.toThrow()
+  })
+
   it("rejects zero or negative reps", () => {
     expect(() => assertValidWorkoutLog({ ...valid, reps: 0 })).toThrow(
       InvalidWorkoutLogError,
@@ -96,6 +100,18 @@ describe("CreateWorkoutLogUseCase", () => {
     expect(mockWriter.create).toHaveBeenCalledWith({
       ...input,
       weekPageId: undefined,
+    })
+  })
+
+  it("writes a record with fractional reps", async () => {
+    const useCase = new CreateWorkoutLogUseCase(mockWriter, mockWeekResolver)
+    const fractionalInput = { ...input, reps: 0.1 }
+
+    await useCase.execute(fractionalInput)
+
+    expect(mockWriter.create).toHaveBeenCalledWith({
+      ...fractionalInput,
+      weekPageId: "week-1",
     })
   })
 

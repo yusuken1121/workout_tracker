@@ -142,9 +142,10 @@ export function WorkoutLogForm() {
                         min={0}
                         inputMode="decimal"
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(e.target.valueAsNumber || 0)
-                        }
+                        onChange={(e) => {
+                          const value = e.target.valueAsNumber
+                          field.onChange(Number.isNaN(value) ? 0 : value)
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -161,13 +162,14 @@ export function WorkoutLogForm() {
                     <FormControl>
                       <Input
                         type="number"
-                        step="1"
-                        min={1}
-                        inputMode="numeric"
+                        step="0.1"
+                        min={0}
+                        inputMode="decimal"
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(e.target.valueAsNumber || 0)
-                        }
+                        onChange={(e) => {
+                          const value = e.target.valueAsNumber
+                          field.onChange(Number.isNaN(value) ? 0 : value)
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
