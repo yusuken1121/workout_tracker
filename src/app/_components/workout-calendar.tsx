@@ -1,12 +1,24 @@
 "use client"
 
 import * as React from "react"
-import { endOfMonth, format, isSameDay, parseISO, startOfMonth } from "date-fns"
+import {
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns"
 import { CalendarDays, Loader2 } from "lucide-react"
 import { type DayButton } from "react-day-picker"
 
 import { useWorkoutCalendar } from "@/lib/api/queries/useWorkoutLog"
-import type { WorkoutCalendarDay } from "@/core/domain/workout-calendar"
+import {
+  dayTotalVolumeKg,
+  totalVolumeKgInRange,
+  type WorkoutCalendarDay,
+} from "@/core/domain/workout-calendar"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -19,8 +31,15 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
+/** Weeks start on Monday (common in Japan / ISO weeks). */
+const WEEK_STARTS_ON = 1 as const
+
 function toIsoDate(date: Date): string {
   return format(date, "yyyy-MM-dd")
+}
+
+function formatVolumeKg(kg: number): string {
+  return `${kg.toLocaleString("ja-JP")} kg`
 }
 
 function WorkoutDayButton({
@@ -73,8 +92,13 @@ export function WorkoutCalendar() {
     () => new Date(),
   )
 
-  const from = toIsoDate(startOfMonth(month))
-  const to = toIsoDate(endOfMonth(month))
+  // Pad to full weeks so weekly totals stay accurate at month edges.
+  const from = toIsoDate(
+    startOfWeek(startOfMonth(month), { weekStartsOn: WEEK_STARTS_ON }),
+  )
+  const to = toIsoDate(
+    endOfWeek(endOfMonth(month), { weekStartsOn: WEEK_STARTS_ON }),
+  )
 
   const {
     data: days = [],
@@ -98,6 +122,38 @@ export function WorkoutCalendar() {
 
   const selectedIso = selectedDate ? toIsoDate(selectedDate) : ""
   const selectedDay = selectedIso ? dayByIso.get(selectedIso) : undefined
+
+  const selectedDayVolumeKg = selectedDay ? dayTotalVolumeKg(selectedDay) : 0
+
+  const weekVolume = React.useMemo(() => {
+    if (!selectedDate) return null
+    const weekStart = startOfWeek(selectedDate, {
+      weekStartsOn: WEEK_STARTS_ON,
+    })
+    const weekEnd = endOfWeek(selectedDate, { weekStartsOn: WEEK_STARTS_ON })
+    return {
+      fromIso: toIsoDate(weekStart),
+      toIso: toIsoDate(weekEnd),
+      label: `${format(weekStart, "M/d")} – ${format(weekEnd, "M/d")}`,
+      totalKg: totalVolumeKgInRange(
+        days,
+        toIsoDate(weekStart),
+        toIsoDate(weekEnd),
+      ),
+    }
+  }, [days, selectedDate])
+
+  const monthGymDayCount = React.useMemo(
+    () =>
+      days.filter((d) => {
+        const date = parseISO(d.date)
+        return (
+          date.getMonth() === month.getMonth() &&
+          date.getFullYear() === month.getFullYear()
+        )
+      }).length,
+    [days, month],
+  )
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 lg:flex-row lg:items-start">
@@ -154,6 +210,30 @@ export function WorkoutCalendar() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {selectedDate && weekVolume && (
+            <div className="bg-muted/50 mb-4 grid grid-cols-2 gap-3 rounded-lg px-3 py-3 text-sm">
+              <div>
+                <p className="text-muted-foreground text-xs">この日の総合</p>
+                <p className="mt-0.5 font-mono text-base font-semibold tabular-nums">
+                  {formatVolumeKg(selectedDayVolumeKg)}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">
+                  この週の合計重量
+                  <span className="ml-1 opacity-70">({weekVolume.label})</span>
+                </p>
+                <p className="mt-0.5 font-mono text-base font-semibold tabular-nums">
+                  {formatVolumeKg(weekVolume.totalKg)}
+                </p>
+              </div>
+              <p className="text-muted-foreground col-span-2 text-[11px] leading-snug">
+                合計は各セットの kg × 回数
+                を足した総負荷量です。週は月曜始まりです。
+              </p>
+            </div>
+          )}
+
           {!selectedDate && (
             <p className="text-muted-foreground py-8 text-center text-sm">
               左側のカレンダーから日付を選んでください。
@@ -161,7 +241,7 @@ export function WorkoutCalendar() {
           )}
 
           {selectedDate && !selectedDay && (
-            <p className="text-muted-foreground py-8 text-center text-sm">
+            <p className="text-muted-foreground py-4 text-center text-sm">
               ジムに行った記録がありません。
             </p>
           )}
@@ -200,19 +280,9 @@ export function WorkoutCalendar() {
             </ul>
           )}
 
-          {!isLoading && days.length > 0 && (
+          {!isLoading && monthGymDayCount > 0 && (
             <p className="text-muted-foreground mt-6 text-xs">
-              この月のジム実施日:{" "}
-              {
-                days.filter((d) => {
-                  const date = parseISO(d.date)
-                  return (
-                    date.getMonth() === month.getMonth() &&
-                    date.getFullYear() === month.getFullYear()
-                  )
-                }).length
-              }{" "}
-              日
+              この月のジム実施日: {monthGymDayCount} 日
               {selectedDate &&
                 days.some((d) => isSameDay(parseISO(d.date), selectedDate)) &&
                 " · 選択日に記録あり"}

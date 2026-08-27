@@ -21,6 +21,41 @@ export interface WorkoutCalendarDay {
   exercises: WorkoutCalendarExercise[]
 }
 
+/** Total moved weight for one set: kg × reps. */
+export function setVolumeKg(
+  set: Pick<WorkoutCalendarSet, "weightKg" | "reps">,
+): number {
+  return set.weightKg * set.reps
+}
+
+/** Sum of (kg × reps) across every set on a calendar day. */
+export function dayTotalVolumeKg(day: WorkoutCalendarDay): number {
+  let total = 0
+  for (const exercise of day.exercises) {
+    for (const set of exercise.sets) {
+      total += setVolumeKg(set)
+    }
+  }
+  return total
+}
+
+/**
+ * Sum of (kg × reps) for days whose ISO date falls in [fromIso, toIso] inclusive.
+ */
+export function totalVolumeKgInRange(
+  days: WorkoutCalendarDay[],
+  fromIso: string,
+  toIso: string,
+): number {
+  let total = 0
+  for (const day of days) {
+    if (day.date >= fromIso && day.date <= toIso) {
+      total += dayTotalVolumeKg(day)
+    }
+  }
+  return total
+}
+
 /**
  * Groups raw log entries into calendar days with named exercises.
  * Days and exercises are sorted for stable UI rendering.
