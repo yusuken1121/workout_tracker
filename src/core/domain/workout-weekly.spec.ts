@@ -56,7 +56,12 @@ describe("summarizeWeeks", () => {
         gymDays: 1,
         setCount: 2,
       },
-      { ...ranges[1], totalVolumeKg: 65 * 6 + 100 * 5, gymDays: 1, setCount: 2 },
+      {
+        ...ranges[1],
+        totalVolumeKg: 65 * 6 + 100 * 5,
+        gymDays: 1,
+        setCount: 2,
+      },
       { ...ranges[2], totalVolumeKg: 0, gymDays: 0, setCount: 0 },
     ])
   })

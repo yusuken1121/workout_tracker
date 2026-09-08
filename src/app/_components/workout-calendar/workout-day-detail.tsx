@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { DeleteSetButton } from "./delete-set-button"
+import { EditSetDialog } from "./edit-set-dialog"
 
 export type WeekSummary = {
   label: string
@@ -102,10 +103,14 @@ export function WorkoutDayDetail({
                       className="flex items-center justify-between gap-3"
                     >
                       <span>セット {index + 1}</span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-0.5">
                         <span className="text-foreground font-mono tabular-nums">
                           {set.weightKg} kg × {set.reps} 回
                         </span>
+                        <EditSetDialog
+                          set={set}
+                          exerciseName={exercise.exerciseName}
+                        />
                         <DeleteSetButton
                           setId={set.id}
                           label={`${exercise.exerciseName} ${set.weightKg} kg × ${set.reps} 回`}

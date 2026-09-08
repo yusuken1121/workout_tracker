@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -40,6 +41,7 @@ import { NumericInput } from "@/components/numeric-input"
 import { Textarea } from "@/components/ui/textarea"
 import { ExerciseSelect } from "./exercise-select"
 import { LastSessionHint } from "./last-session-hint"
+import { RestTimer } from "./rest-timer"
 
 function defaultValues(): WorkoutLogFormValues {
   return {
@@ -64,10 +66,12 @@ export function WorkoutLogForm() {
   const { data: progress = [], isLoading: isLoadingProgress } =
     useWorkoutProgress(exercisePageId)
   const lastSession = latestProgressPoint(progress)
+  const [savedCount, setSavedCount] = React.useState(0)
 
   const { mutate, isPending } = useCreateWorkoutLog({
     onSuccess: () => {
       toast.success("記録を保存しました")
+      setSavedCount((count) => count + 1)
       // Keep exercise + weight so the next set of the same exercise is one tap away.
       form.reset({
         ...defaultValues(),
@@ -220,6 +224,8 @@ export function WorkoutLogForm() {
             </Button>
           </form>
         </Form>
+
+        <RestTimer autoStartSignal={savedCount} className="mt-4" />
       </CardContent>
     </Card>
   )

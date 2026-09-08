@@ -3,6 +3,7 @@
  */
 export const PATH = {
   HOME: "/",
+  DASHBOARD: "/dashboard",
   PROGRESS: "/progress",
   CALENDAR: "/calendar",
   CONTACT: "/contact",

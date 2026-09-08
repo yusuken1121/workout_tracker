@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChartLine,
   Dumbbell,
+  LayoutDashboard,
   LogOutIcon,
   Mail,
   Settings,
@@ -11,6 +12,7 @@ import {
 
 export const MENU_KEYS = {
   WORKOUT_LOG: "workoutLog",
+  DASHBOARD: "dashboard",
   PROGRESS: "progress",
   CALENDAR: "calendar",
   CONTACT: "contact",
@@ -34,6 +36,12 @@ export const SIDEBAR_CONFIG: Record<MenuKey, SidebarItemConfig> = {
     path: PATH.HOME,
     icon: <Dumbbell className="h-5 w-5" />,
     activeColor: "text-blue-600 dark:text-blue-400",
+  },
+  [MENU_KEYS.DASHBOARD]: {
+    label: "ダッシュボード",
+    path: PATH.DASHBOARD,
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    activeColor: "text-violet-600 dark:text-violet-400",
   },
   [MENU_KEYS.PROGRESS]: {
     label: "進捗",
@@ -69,6 +77,7 @@ export const SIDEBAR_CONFIG: Record<MenuKey, SidebarItemConfig> = {
 
 export const mainSidebar: MenuKey[] = [
   MENU_KEYS.WORKOUT_LOG,
+  MENU_KEYS.DASHBOARD,
   MENU_KEYS.PROGRESS,
   MENU_KEYS.CALENDAR,
   MENU_KEYS.CONTACT,

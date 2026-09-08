@@ -38,9 +38,6 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    return handleRouteError(
-      error,
-      "DELETE /api/workout-log/[id] Route Handler",
-    )
+    return handleRouteError(error, "DELETE /api/workout-log/[id] Route Handler")
   }
 }
