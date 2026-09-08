@@ -36,3 +36,17 @@ export function assertValidWorkoutLog(record: WorkoutLogInput): void {
     throw new InvalidWorkoutLogError("Performed date must be provided")
   }
 }
+
+/** Editable fields of an existing set. Exercise and date are fixed once logged. */
+export type WorkoutLogPatch = Pick<WorkoutLogInput, "weightKg" | "reps"> & {
+  notes?: string
+}
+
+export function assertValidWorkoutLogPatch(patch: WorkoutLogPatch): void {
+  if (patch.weightKg < 0) {
+    throw new InvalidWorkoutLogError("Weight must be zero or greater")
+  }
+  if (patch.reps <= 0) {
+    throw new InvalidWorkoutLogError("Reps must be greater than zero")
+  }
+}

@@ -4,16 +4,21 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { Dumbbell, Loader2 } from "lucide-react"
-import { format } from "date-fns"
 
 import {
   useCreateWorkoutLog,
   useExerciseOptions,
+  useWorkoutProgress,
 } from "@/lib/api/queries/useWorkoutLog"
 import {
   workoutLogFormSchema,
   type WorkoutLogFormValues,
 } from "@/lib/validators/workout-log.schema"
+import {
+  latestProgressPoint,
+  type WorkoutProgressPoint,
+} from "@/core/domain/workout-progress"
+import { todayIso } from "@/lib/workout-format"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -31,17 +36,19 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/numeric-input"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { ExerciseSelect } from "./exercise-select"
+import { LastSessionHint } from "./last-session-hint"
 
-function todayIso(): string {
-  return format(new Date(), "yyyy-MM-dd")
+function defaultValues(): WorkoutLogFormValues {
+  return {
+    exercisePageId: "",
+    weightKg: 0,
+    reps: 0,
+    performedAt: todayIso(),
+    notes: "",
+  }
 }
 
 export function WorkoutLogForm() {
@@ -50,24 +57,22 @@ export function WorkoutLogForm() {
 
   const form = useForm<WorkoutLogFormValues>({
     resolver: zodResolver(workoutLogFormSchema),
-    defaultValues: {
-      exercisePageId: "",
-      weightKg: 0,
-      reps: 0,
-      performedAt: todayIso(),
-      notes: "",
-    },
+    defaultValues: defaultValues(),
   })
+
+  const exercisePageId = form.watch("exercisePageId")
+  const { data: progress = [], isLoading: isLoadingProgress } =
+    useWorkoutProgress(exercisePageId)
+  const lastSession = latestProgressPoint(progress)
 
   const { mutate, isPending } = useCreateWorkoutLog({
     onSuccess: () => {
       toast.success("記録を保存しました")
+      // Keep exercise + weight so the next set of the same exercise is one tap away.
       form.reset({
+        ...defaultValues(),
         exercisePageId: form.getValues("exercisePageId"),
         weightKg: form.getValues("weightKg"),
-        reps: 0,
-        performedAt: todayIso(),
-        notes: "",
       })
     },
     onError: (error) => {
@@ -75,8 +80,10 @@ export function WorkoutLogForm() {
     },
   })
 
-  const onSubmit = (values: WorkoutLogFormValues) => {
-    mutate(values)
+  const applyLastSession = (session: WorkoutProgressPoint) => {
+    form.setValue("weightKg", session.weightKg, { shouldDirty: true })
+    form.setValue("reps", session.reps, { shouldDirty: true })
+    form.setFocus("reps")
   }
 
   return (
@@ -92,60 +99,52 @@ export function WorkoutLogForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit((values) => mutate(values))}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="exercisePageId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>種目</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLoadingExercises}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={
-                            isLoadingExercises
-                              ? "読み込み中..."
-                              : "種目を選択してください"
-                          }
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {exerciseOptions?.map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <ExerciseSelect
+                      className="w-full"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      options={exerciseOptions}
+                      isLoading={isLoadingExercises}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {exercisePageId && (
+              <LastSessionHint
+                lastSession={lastSession}
+                isLoading={isLoadingProgress}
+                onApply={applyLastSession}
+              />
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="weightKg"
-                render={({ field }) => (
+                render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
                     <FormLabel>重量 (kg)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
+                      <NumericInput
                         step="0.5"
                         min={0}
-                        inputMode="decimal"
+                        value={value}
+                        onValueChange={onChange}
                         {...field}
-                        onChange={(e) => {
-                          const value = e.target.valueAsNumber
-                          field.onChange(Number.isNaN(value) ? 0 : value)
-                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -156,20 +155,16 @@ export function WorkoutLogForm() {
               <FormField
                 control={form.control}
                 name="reps"
-                render={({ field }) => (
+                render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
                     <FormLabel>回数</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
+                      <NumericInput
                         step="0.1"
                         min={0}
-                        inputMode="decimal"
+                        value={value}
+                        onValueChange={onChange}
                         {...field}
-                        onChange={(e) => {
-                          const value = e.target.valueAsNumber
-                          field.onChange(Number.isNaN(value) ? 0 : value)
-                        }}
                       />
                     </FormControl>
                     <FormMessage />

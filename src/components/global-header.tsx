@@ -17,18 +17,16 @@ import { SIDEBAR_CONFIG } from "@/constants/menuKeys"
 export function GlobalHeader() {
   const pathname = usePathname()
 
-  // Helper to find label by path
+  // Exact route match first; otherwise the closest non-root parent route.
   const getPageTitle = (path: string) => {
-    if (path === "/") return "Chat"
+    const items = Object.values(SIDEBAR_CONFIG)
+    const exact = items.find((item) => item.path === path)
+    if (exact) return exact.label
 
-    // Search in config
-    const configEntry = Object.values(SIDEBAR_CONFIG).find(
-      (item) =>
-        item.path === path ||
-        (item.path !== "/" && path.startsWith(item.path || "")),
+    const parent = items.find(
+      (item) => item.path && item.path !== "/" && path.startsWith(item.path),
     )
-
-    return configEntry?.label || "Page"
+    return parent?.label ?? "Page"
   }
 
   const title = getPageTitle(pathname)

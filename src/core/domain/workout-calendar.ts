@@ -1,3 +1,4 @@
+import { setVolumeKg } from "./workout-metrics"
 import type { WorkoutLogEntry } from "./workout-progress"
 
 /** One set shown under a day's training menu. */
@@ -19,13 +20,6 @@ export interface WorkoutCalendarExercise {
 export interface WorkoutCalendarDay {
   date: string
   exercises: WorkoutCalendarExercise[]
-}
-
-/** Total moved weight for one set: kg × reps. */
-export function setVolumeKg(
-  set: Pick<WorkoutCalendarSet, "weightKg" | "reps">,
-): number {
-  return set.weightKg * set.reps
 }
 
 /** Sum of (kg × reps) across every set on a calendar day. */

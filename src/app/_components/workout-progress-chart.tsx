@@ -2,14 +2,22 @@
 
 import * as React from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import { format, parseISO } from "date-fns"
 import { ChartLine, Loader2 } from "lucide-react"
 
 import {
   useExerciseOptions,
   useWorkoutProgress,
 } from "@/lib/api/queries/useWorkoutLog"
-import type { WorkoutProgressPoint } from "@/core/domain/workout-progress"
+import {
+  summarizeWorkoutProgress,
+  type WorkoutProgressPoint,
+} from "@/core/domain/workout-progress"
+import {
+  formatFullDate,
+  formatKg,
+  formatShortDate,
+  formatSignedKg,
+} from "@/lib/workout-format"
 import {
   Card,
   CardContent,
@@ -23,57 +31,57 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ExerciseSelect } from "./exercise-select"
 
-type MetricKey = "weightKg" | "reps" | "volume"
+type MetricKey = keyof Pick<
+  WorkoutProgressPoint,
+  "weightKg" | "reps" | "volume" | "estimatedOneRepMaxKg"
+>
 
-const METRIC_LABELS: Record<MetricKey, string> = {
-  weightKg: "重量 (kg)",
-  reps: "回数",
-  volume: "総負荷量",
+type MetricDefinition = {
+  key: MetricKey
+  tab: string
+  label: string
+  color: string
+  unit: string
 }
 
-const chartConfig = {
-  weightKg: { label: "重量 (kg)", color: "hsl(221, 83%, 53%)" },
-  reps: { label: "回数", color: "hsl(142, 71%, 45%)" },
-  volume: { label: "総負荷量", color: "hsl(32, 95%, 44%)" },
-} satisfies ChartConfig
+const METRICS: MetricDefinition[] = [
+  {
+    key: "weightKg",
+    tab: "重量",
+    label: "重量 (kg)",
+    color: "hsl(221, 83%, 53%)",
+    unit: "kg",
+  },
+  {
+    key: "reps",
+    tab: "回数",
+    label: "回数",
+    color: "hsl(142, 71%, 45%)",
+    unit: "回",
+  },
+  {
+    key: "volume",
+    tab: "総負荷",
+    label: "総負荷量 (kg)",
+    color: "hsl(32, 95%, 44%)",
+    unit: "kg",
+  },
+  {
+    key: "estimatedOneRepMaxKg",
+    tab: "推定1RM",
+    label: "推定1RM (kg)",
+    color: "hsl(280, 65%, 55%)",
+    unit: "kg",
+  },
+]
 
-function formatDateLabel(dateIso: string): string {
-  try {
-    return format(parseISO(dateIso), "M/d")
-  } catch {
-    return dateIso
-  }
-}
-
-function formatFullDate(dateIso: string): string {
-  try {
-    return format(parseISO(dateIso), "yyyy/MM/dd")
-  } catch {
-    return dateIso
-  }
-}
-
-function summarize(points: WorkoutProgressPoint[]) {
-  if (points.length === 0) return null
-
-  const first = points[0]
-  const latest = points[points.length - 1]
-  const maxWeight = Math.max(...points.map((p) => p.weightKg))
-  const maxReps = Math.max(...points.map((p) => p.reps))
-  const weightDelta = latest.weightKg - first.weightKg
-
-  return { first, latest, maxWeight, maxReps, weightDelta }
-}
+const chartConfig: ChartConfig = Object.fromEntries(
+  METRICS.map((m) => [m.key, { label: m.label, color: m.color }]),
+)
 
 export function WorkoutProgressChart() {
   const [exercisePageId, setExercisePageId] = React.useState("")
@@ -90,7 +98,8 @@ export function WorkoutProgressChart() {
 
   const selectedLabel =
     exerciseOptions?.find((o) => o.id === exercisePageId)?.label ?? ""
-  const summary = summarize(points)
+  const summary = summarizeWorkoutProgress(points)
+  const hasData = Boolean(exercisePageId) && !isLoadingProgress && !error
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
@@ -102,42 +111,29 @@ export function WorkoutProgressChart() {
               進捗グラフ
             </CardTitle>
             <CardDescription>
-              種目ごとの重量・回数・実施日の推移を確認できます。
+              種目ごとの重量・回数・総負荷・推定1RMの推移を確認できます。
             </CardDescription>
           </div>
 
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
-            <Select
-              value={exercisePageId || undefined}
+            <ExerciseSelect
+              className="w-full sm:w-64"
+              value={exercisePageId}
               onValueChange={setExercisePageId}
-              disabled={isLoadingExercises}
-            >
-              <SelectTrigger className="w-full sm:w-64">
-                <SelectValue
-                  placeholder={
-                    isLoadingExercises
-                      ? "読み込み中..."
-                      : "種目を選択してください"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {exerciseOptions?.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={exerciseOptions}
+              isLoading={isLoadingExercises}
+            />
 
             <Tabs
               value={metric}
               onValueChange={(value) => setMetric(value as MetricKey)}
             >
               <TabsList>
-                <TabsTrigger value="weightKg">重量</TabsTrigger>
-                <TabsTrigger value="reps">回数</TabsTrigger>
-                <TabsTrigger value="volume">総負荷</TabsTrigger>
+                {METRICS.map((m) => (
+                  <TabsTrigger key={m.key} value={m.key}>
+                    {m.tab}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </Tabs>
           </div>
@@ -163,151 +159,145 @@ export function WorkoutProgressChart() {
             </p>
           )}
 
-          {exercisePageId &&
-            !isLoadingProgress &&
-            !error &&
-            points.length === 0 && (
-              <p className="text-muted-foreground py-16 text-center text-sm">
-                「{selectedLabel}」の記録がまだありません。
-              </p>
-            )}
+          {hasData && points.length === 0 && (
+            <p className="text-muted-foreground py-16 text-center text-sm">
+              「{selectedLabel}」の記録がまだありません。
+            </p>
+          )}
 
-          {exercisePageId &&
-            !isLoadingProgress &&
-            !error &&
-            points.length > 0 && (
-              <>
-                {summary && (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <Stat
-                      label="最新重量"
-                      value={`${summary.latest.weightKg} kg`}
-                      hint={formatFullDate(summary.latest.date)}
-                    />
-                    <Stat
-                      label="最新回数"
-                      value={`${summary.latest.reps} 回`}
-                      hint={formatFullDate(summary.latest.date)}
-                    />
-                    <Stat label="最高重量" value={`${summary.maxWeight} kg`} />
-                    <Stat
-                      label="重量の変化"
-                      value={`${summary.weightDelta >= 0 ? "+" : ""}${summary.weightDelta} kg`}
-                      hint={`${formatFullDate(summary.first.date)} → ${formatFullDate(summary.latest.date)}`}
-                    />
+          {hasData && summary && (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <Stat
+                  label="最新重量"
+                  value={formatKg(summary.latest.weightKg)}
+                  hint={formatFullDate(summary.latest.date)}
+                />
+                <Stat
+                  label="最新回数"
+                  value={`${summary.latest.reps} 回`}
+                  hint={formatFullDate(summary.latest.date)}
+                />
+                <Stat label="最高重量" value={formatKg(summary.maxWeightKg)} />
+                <Stat
+                  label="推定1RM (最高)"
+                  value={formatKg(summary.maxEstimatedOneRepMaxKg)}
+                  hint="Epley式: kg × (1 + 回数/30)"
+                />
+                <Stat
+                  label="重量の変化"
+                  value={formatSignedKg(summary.weightDeltaKg)}
+                  hint={`${formatFullDate(summary.first.date)} → ${formatFullDate(summary.latest.date)}`}
+                />
+              </div>
+
+              <div className="relative">
+                {isFetching && (
+                  <div className="text-muted-foreground absolute top-0 right-0 z-10 flex items-center gap-1 text-xs">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    更新中
                   </div>
                 )}
 
-                <div className="relative">
-                  {isFetching && !isLoadingProgress && (
-                    <div className="text-muted-foreground absolute top-0 right-0 z-10 flex items-center gap-1 text-xs">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      更新中
-                    </div>
-                  )}
-
-                  <ChartContainer
-                    config={chartConfig}
-                    className="aspect-auto h-[320px] w-full"
+                <ChartContainer
+                  config={chartConfig}
+                  className="aspect-auto h-[320px] w-full"
+                >
+                  <LineChart
+                    accessibilityLayer
+                    data={points}
+                    margin={{ left: 8, right: 12, top: 8, bottom: 0 }}
                   >
-                    <LineChart
-                      accessibilityLayer
-                      data={points}
-                      margin={{ left: 8, right: 12, top: 8, bottom: 0 }}
-                    >
-                      <CartesianGrid vertical={false} />
-                      <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        minTickGap={24}
-                        tickFormatter={formatDateLabel}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        width={40}
-                        domain={["auto", "auto"]}
-                      />
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent
-                            labelFormatter={(_, payload) => {
-                              const date = payload?.[0]?.payload?.date
-                              return typeof date === "string"
-                                ? formatFullDate(date)
-                                : ""
-                            }}
-                            formatter={(value, name, item) => {
-                              const point = item.payload as WorkoutProgressPoint
-                              if (name === metric) {
-                                return (
-                                  <div className="flex w-full flex-col gap-1">
-                                    <div className="flex items-center justify-between gap-4">
-                                      <span className="text-muted-foreground">
-                                        {METRIC_LABELS[metric]}
-                                      </span>
-                                      <span className="font-mono font-medium tabular-nums">
-                                        {String(value)}
-                                      </span>
-                                    </div>
-                                    {metric !== "weightKg" && (
-                                      <div className="flex items-center justify-between gap-4">
-                                        <span className="text-muted-foreground">
-                                          重量
-                                        </span>
-                                        <span className="font-mono tabular-nums">
-                                          {point.weightKg} kg
-                                        </span>
-                                      </div>
-                                    )}
-                                    {metric !== "reps" && (
-                                      <div className="flex items-center justify-between gap-4">
-                                        <span className="text-muted-foreground">
-                                          回数
-                                        </span>
-                                        <span className="font-mono tabular-nums">
-                                          {point.reps} 回
-                                        </span>
-                                      </div>
-                                    )}
-                                    <div className="flex items-center justify-between gap-4">
-                                      <span className="text-muted-foreground">
-                                        セット数
-                                      </span>
-                                      <span className="font-mono tabular-nums">
-                                        {point.setCount}
-                                      </span>
-                                    </div>
-                                  </div>
-                                )
-                              }
-                              return null
-                            }}
-                          />
-                        }
-                      />
-                      <Line
-                        dataKey={metric}
-                        type="monotone"
-                        stroke={`var(--color-${metric})`}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    </LineChart>
-                  </ChartContainer>
-                </div>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      minTickGap={24}
+                      tickFormatter={formatShortDate}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      width={40}
+                      domain={["auto", "auto"]}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(_, payload) => {
+                            const date = payload?.[0]?.payload?.date
+                            return typeof date === "string"
+                              ? formatFullDate(date)
+                              : ""
+                          }}
+                          formatter={(_, name, item) =>
+                            name === metric ? (
+                              <PointTooltip
+                                point={item.payload as WorkoutProgressPoint}
+                                metric={metric}
+                              />
+                            ) : null
+                          }
+                        />
+                      }
+                    />
+                    <Line
+                      dataKey={metric}
+                      type="monotone"
+                      stroke={`var(--color-${metric})`}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </div>
 
-                <p className="text-muted-foreground text-xs">
-                  同一日に複数セットがある場合は、その日の最重量セットを表示しています（総負荷量は全セット合計）。
-                </p>
-              </>
-            )}
+              <p className="text-muted-foreground text-xs">
+                同一日に複数セットがある場合は、その日の最重量セットを表示しています（総負荷量は全セット合計、推定1RMは全セット中の最高値）。
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+/** Tooltip body: the active metric first, then the remaining context for that day. */
+function PointTooltip({
+  point,
+  metric,
+}: {
+  point: WorkoutProgressPoint
+  metric: MetricKey
+}) {
+  const ordered = [
+    ...METRICS.filter((m) => m.key === metric),
+    ...METRICS.filter((m) => m.key !== metric),
+  ]
+  const rows = [
+    ...ordered.map((m) => ({
+      label: m.label,
+      value: `${point[m.key]} ${m.unit}`,
+    })),
+    { label: "セット数", value: String(point.setCount) },
+  ]
+
+  return (
+    <div className="flex w-full flex-col gap-1">
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          className="flex items-center justify-between gap-4"
+        >
+          <span className="text-muted-foreground">{row.label}</span>
+          <span className="font-mono tabular-nums">{row.value}</span>
+        </div>
+      ))}
     </div>
   )
 }

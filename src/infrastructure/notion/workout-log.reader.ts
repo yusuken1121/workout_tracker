@@ -3,33 +3,21 @@ import type { WorkoutLogEntry } from "../../core/domain/workout-progress"
 import type { IWorkoutLogReader } from "../../core/ports/workout-log-reader.port"
 import { NotionClientFactory } from "./notion-client.factory"
 import {
+  queryDataSourcePages,
+  type DataSourceQueryOptions,
+} from "./notion-data-source.util"
+import {
   extractDateStartIso,
   extractNumber,
   extractPlainText,
   extractRelationIds,
 } from "./notion-page-property.util"
+import {
+  WORKOUT_LOG_PROPERTIES,
+  type WorkoutLogPropertyNames,
+} from "./workout-notion.properties"
 
-const MAX_PAGE_SIZE = 100
-
-type WorkoutLogPropertyNames = {
-  exercise: string
-  weightKg: string
-  reps: string
-  performedAt: string
-  notes: string
-}
-
-const DEFAULT_PROPERTY_NAMES: WorkoutLogPropertyNames = {
-  exercise: "種目",
-  weightKg: "kg",
-  reps: "reps",
-  performedAt: "実施日",
-  notes: "感想",
-}
-
-type QueryFilter = NonNullable<
-  Parameters<Client["dataSources"]["query"]>[0]["filter"]
->
+type QueryFilter = NonNullable<DataSourceQueryOptions["filter"]>
 
 /** Reads workout log rows from Notion, filtered by exercise or date range. */
 export class NotionWorkoutLogReader implements IWorkoutLogReader {
@@ -42,7 +30,7 @@ export class NotionWorkoutLogReader implements IWorkoutLogReader {
     properties?: Partial<WorkoutLogPropertyNames>,
   ) {
     this.client = client ?? NotionClientFactory.create()
-    this.properties = { ...DEFAULT_PROPERTY_NAMES, ...properties }
+    this.properties = { ...WORKOUT_LOG_PROPERTIES, ...properties }
   }
 
   async listByExercise(exercisePageId: string): Promise<WorkoutLogEntry[]> {
@@ -71,35 +59,16 @@ export class NotionWorkoutLogReader implements IWorkoutLogReader {
   }
 
   private async queryEntries(filter: QueryFilter): Promise<WorkoutLogEntry[]> {
-    const entries: WorkoutLogEntry[] = []
-    let startCursor: string | undefined
+    const pages = await queryDataSourcePages(this.client, this.dataSourceId, {
+      filter,
+      sorts: [
+        { property: this.properties.performedAt, direction: "ascending" },
+      ],
+    })
 
-    do {
-      const response = await this.client.dataSources.query({
-        data_source_id: this.dataSourceId,
-        page_size: MAX_PAGE_SIZE,
-        start_cursor: startCursor,
-        filter,
-        sorts: [
-          {
-            property: this.properties.performedAt,
-            direction: "ascending",
-          },
-        ],
-      })
-
-      for (const result of response.results) {
-        if (result.object !== "page") continue
-        const entry = this.toEntry(result as PageObjectResponse)
-        if (entry) entries.push(entry)
-      }
-
-      startCursor = response.has_more
-        ? (response.next_cursor ?? undefined)
-        : undefined
-    } while (startCursor)
-
-    return entries
+    return pages
+      .map((page) => this.toEntry(page))
+      .filter((entry): entry is WorkoutLogEntry => entry !== null)
   }
 
   private toEntry(page: PageObjectResponse): WorkoutLogEntry | null {
