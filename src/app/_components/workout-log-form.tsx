@@ -79,10 +79,19 @@ export function WorkoutLogForm() {
         weightKg: form.getValues("weightKg"),
       })
     },
-    onError: (error) => {
-      toast.error(error.message || "保存に失敗しました")
+    onError: (error, values) => {
+      // The form keeps its values, so a retry resends exactly the same set.
+      toast.error(error.message || "保存に失敗しました", {
+        duration: 10_000,
+        action: { label: "再試行", onClick: () => mutate(values) },
+      })
     },
   })
+
+  // Guard against a double tap / Enter while a save is in flight.
+  const submit = (values: WorkoutLogFormValues) => {
+    if (!isPending) mutate(values)
+  }
 
   const applyLastSession = (session: WorkoutProgressPoint) => {
     form.setValue("weightKg", session.weightKg, { shouldDirty: true })
@@ -103,10 +112,7 @@ export function WorkoutLogForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit((values) => mutate(values))}
-            className="space-y-4"
-          >
+          <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
             <FormField
               control={form.control}
               name="exercisePageId"
@@ -120,6 +126,7 @@ export function WorkoutLogForm() {
                       onValueChange={field.onChange}
                       options={exerciseOptions}
                       isLoading={isLoadingExercises}
+                      showQuickPicks
                     />
                   </FormControl>
                   <FormMessage />
@@ -144,8 +151,6 @@ export function WorkoutLogForm() {
                     <FormLabel>重量 (kg)</FormLabel>
                     <FormControl>
                       <NumericInput
-                        step="0.5"
-                        min={0}
                         value={value}
                         onValueChange={onChange}
                         {...field}
@@ -164,8 +169,6 @@ export function WorkoutLogForm() {
                     <FormLabel>回数</FormLabel>
                     <FormControl>
                       <NumericInput
-                        step="0.1"
-                        min={0}
                         value={value}
                         onValueChange={onChange}
                         {...field}

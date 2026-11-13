@@ -2,6 +2,7 @@ import type { Client } from "@notionhq/client"
 import type { WorkoutLogPatch } from "../../core/domain/workout-log.entity"
 import type { IWorkoutLogUpdater } from "../../core/ports/workout-log-updater.port"
 import { NotionClientFactory } from "./notion-client.factory"
+import { describeNotionError, withNotionRetry } from "./notion-retry"
 import type { NotionFieldMapping } from "./notion-field-mapping.types"
 import { NotionPropertyBuilder } from "./notion-property.builder"
 import { NotionWriteError } from "./notion-write.error"
@@ -38,14 +39,22 @@ export class NotionWorkoutLogUpdater implements IWorkoutLogUpdater {
     const properties = NotionPropertyBuilder.build(patch, PATCH_FIELDS)
 
     try {
-      await this.client.pages.update({
-        page_id: logId,
-        properties: properties as Parameters<
-          Client["pages"]["update"]
-        >[0]["properties"],
-      })
+      // Setting the same property values twice is harmless, so retry freely.
+      await withNotionRetry(
+        () =>
+          this.client.pages.update({
+            page_id: logId,
+            properties: properties as Parameters<
+              Client["pages"]["update"]
+            >[0]["properties"],
+          }),
+        { policy: "idempotent" },
+      )
     } catch (error) {
-      throw new NotionWriteError("Failed to update Notion page", error)
+      throw new NotionWriteError(
+        `更新に失敗しました: ${describeNotionError(error)}`,
+        error,
+      )
     }
   }
 }

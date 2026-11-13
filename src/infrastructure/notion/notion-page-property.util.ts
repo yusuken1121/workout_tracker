@@ -83,3 +83,21 @@ export function extractDateStartIso(
   const match = raw.match(/^(\d{4}-\d{2}-\d{2})/)
   return match?.[1] ?? null
 }
+
+/**
+ * Collects option names from every select / multi_select property on a page
+ * (e.g. 部位 "胸", 器具 "ダンベル"), de-duplicated in property order.
+ */
+export function extractSelectOptionNames(page: PageObjectResponse): string[] {
+  const names = new Set<string>()
+  for (const property of Object.values(page.properties)) {
+    if (property.type === "select" && property.select?.name) {
+      names.add(property.select.name)
+    } else if (property.type === "multi_select") {
+      for (const option of property.multi_select) {
+        if (option.name) names.add(option.name)
+      }
+    }
+  }
+  return Array.from(names)
+}

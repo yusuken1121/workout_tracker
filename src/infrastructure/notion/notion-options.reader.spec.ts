@@ -45,6 +45,31 @@ describe("NotionOptionsReader", () => {
     })
   })
 
+  it("exposes select and multi-select values as tags", async () => {
+    const client = makeClient([
+      {
+        object: "page",
+        id: "page-1",
+        properties: {
+          種目名: { type: "title", title: [{ plain_text: "ベンチプレス" }] },
+          部位: { type: "select", select: { name: "胸" } },
+          器具: {
+            type: "multi_select",
+            multi_select: [{ name: "バーベル" }, { name: "胸" }],
+          },
+          メモ: { type: "select", select: null },
+        },
+      },
+    ])
+
+    const reader = new NotionOptionsReader("data-source-1", "種目名", client)
+    const result = await reader.listOptions()
+
+    expect(result).toEqual([
+      { id: "page-1", label: "ベンチプレス", tags: ["胸", "バーベル"] },
+    ])
+  })
+
   it("skips non-page results and pages with an empty title", async () => {
     const client = makeClient([
       { object: "data_source", id: "ds-1" },

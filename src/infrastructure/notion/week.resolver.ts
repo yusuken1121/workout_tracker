@@ -3,6 +3,7 @@ import type { IWeekResolver } from "../../core/ports/week-resolver.port"
 import { NotionClientFactory } from "./notion-client.factory"
 import { queryAllDataSourcePages } from "./notion-data-source.util"
 import { extractDateRange } from "./notion-page-property.util"
+import { withNotionRetry } from "./notion-retry"
 
 /**
  * Notion's date filter compares against the *start* of a date-range
@@ -54,22 +55,26 @@ export class NotionWeekResolver implements IWeekResolver {
     const lowerBound = new Date(target)
     lowerBound.setDate(lowerBound.getDate() - LOOKBACK_DAYS)
 
-    const response = await this.client.dataSources.query({
-      data_source_id: this.dataSourceId,
-      page_size: 25,
-      filter: {
-        and: [
-          {
-            property: this.datePropertyName,
-            date: { on_or_before: toIsoDate(target) },
+    const response = await withNotionRetry(
+      () =>
+        this.client.dataSources.query({
+          data_source_id: this.dataSourceId,
+          page_size: 25,
+          filter: {
+            and: [
+              {
+                property: this.datePropertyName,
+                date: { on_or_before: toIsoDate(target) },
+              },
+              {
+                property: this.datePropertyName,
+                date: { on_or_after: toIsoDate(lowerBound) },
+              },
+            ],
           },
-          {
-            property: this.datePropertyName,
-            date: { on_or_after: toIsoDate(lowerBound) },
-          },
-        ],
-      },
-    })
+        }),
+      { policy: "idempotent" },
+    )
 
     return response.results.filter(
       (result): result is PageObjectResponse => result.object === "page",
