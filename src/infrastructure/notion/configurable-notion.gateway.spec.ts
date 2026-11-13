@@ -77,7 +77,7 @@ describe("ConfigurableNotionGateway", () => {
     // Act & Assert
     await expect(gateway.create(sampleRecord)).rejects.toThrow(NotionWriteError)
     await expect(gateway.create(sampleRecord)).rejects.toThrow(
-      "Failed to create Notion page",
+      "保存に失敗しました",
     )
   })
 

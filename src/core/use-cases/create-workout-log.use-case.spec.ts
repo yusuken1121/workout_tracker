@@ -115,6 +115,22 @@ describe("CreateWorkoutLogUseCase", () => {
     })
   })
 
+  it("still saves the set when the week lookup fails", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {})
+    mockWeekResolver.findWeekIdForDate = vi
+      .fn()
+      .mockRejectedValue(new Error("Notion conflict"))
+    const useCase = new CreateWorkoutLogUseCase(mockWriter, mockWeekResolver)
+
+    const result = await useCase.execute(input)
+
+    expect(result).toEqual(pageRef)
+    expect(mockWriter.create).toHaveBeenCalledWith({
+      ...input,
+      weekPageId: undefined,
+    })
+  })
+
   it("does not write when domain validation fails", async () => {
     const useCase = new CreateWorkoutLogUseCase(mockWriter, mockWeekResolver)
 

@@ -8,6 +8,7 @@ import type { NotionDatabaseConfig } from "./notion-field-mapping.types"
 import { NotionClientFactory } from "./notion-client.factory"
 import { NotionPropertyBuilder } from "./notion-property.builder"
 import { NotionWriteError } from "./notion-write.error"
+import { describeNotionError, withNotionRetry } from "./notion-retry"
 
 export class ConfigurableNotionGateway<
   TRecord,
@@ -25,12 +26,18 @@ export class ConfigurableNotionGateway<
     const properties = NotionPropertyBuilder.build(record, this.config.fields)
 
     try {
-      const response = await this.client.pages.create({
-        parent: { database_id: this.config.databaseId },
-        properties: properties as Parameters<
-          Client["pages"]["create"]
-        >[0]["properties"],
-      })
+      // Retried only on errors where Notion guarantees nothing was written,
+      // so a retry never creates a duplicate page.
+      const response = await withNotionRetry(
+        () =>
+          this.client.pages.create({
+            parent: { database_id: this.config.databaseId },
+            properties: properties as Parameters<
+              Client["pages"]["create"]
+            >[0]["properties"],
+          }),
+        { policy: "create" },
+      )
 
       return {
         id: response.id,
@@ -40,7 +47,10 @@ export class ConfigurableNotionGateway<
       if (error instanceof NotionWriteError) {
         throw error
       }
-      throw new NotionWriteError("Failed to create Notion page", error)
+      throw new NotionWriteError(
+        `保存に失敗しました: ${describeNotionError(error)}`,
+        error,
+      )
     }
   }
 }

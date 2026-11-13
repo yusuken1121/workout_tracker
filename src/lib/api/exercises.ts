@@ -1,8 +1,8 @@
 import { apiClient } from "./apiClient"
-import type { NotionOption } from "@/core/domain/notion-option"
+import type { ExerciseOption } from "@/core/domain/exercise-option"
 
 export interface ListExerciseOptionsResponse {
-  options: NotionOption[]
+  options: ExerciseOption[]
 }
 
 export const exercisesApi = {

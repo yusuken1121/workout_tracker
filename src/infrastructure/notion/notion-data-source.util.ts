@@ -1,4 +1,5 @@
 import type { Client, PageObjectResponse } from "@notionhq/client"
+import { withNotionRetry } from "./notion-retry"
 
 const MAX_PAGE_SIZE = 100
 
@@ -23,12 +24,17 @@ export async function queryDataSourcePages(
   let startCursor: string | undefined
 
   do {
-    const response = await client.dataSources.query({
-      data_source_id: dataSourceId,
-      page_size: MAX_PAGE_SIZE,
-      start_cursor: startCursor,
-      ...options,
-    })
+    const cursor = startCursor
+    const response = await withNotionRetry(
+      () =>
+        client.dataSources.query({
+          data_source_id: dataSourceId,
+          page_size: MAX_PAGE_SIZE,
+          start_cursor: cursor,
+          ...options,
+        }),
+      { policy: "idempotent" },
+    )
 
     for (const result of response.results) {
       if (result.object === "page") {

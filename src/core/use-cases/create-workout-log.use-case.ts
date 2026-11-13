@@ -18,10 +18,26 @@ export class CreateWorkoutLogUseCase {
   async execute(input: WorkoutLogInput): Promise<NotionPageRef> {
     assertValidWorkoutLog(input)
 
-    const weekPageId = await this.weekResolver.findWeekIdForDate(
-      input.performedAt,
-    )
+    const weekPageId = await this.resolveWeekId(input.performedAt)
 
     return this.writer.create({ ...input, weekPageId })
+  }
+
+  /**
+   * The 週 relation is a convenience link, not part of the set itself. If the
+   * lookup fails, save the set without it rather than losing the user's input.
+   */
+  private async resolveWeekId(
+    performedAt: string,
+  ): Promise<string | undefined> {
+    try {
+      return await this.weekResolver.findWeekIdForDate(performedAt)
+    } catch (error) {
+      console.warn(
+        `Week lookup failed for ${performedAt}; saving without 週 relation:`,
+        error,
+      )
+      return undefined
+    }
   }
 }

@@ -108,8 +108,6 @@ export function EditSetDialog({ set, exerciseName }: EditSetDialogProps) {
                     <FormLabel>重量 (kg)</FormLabel>
                     <FormControl>
                       <NumericInput
-                        step="0.5"
-                        min={0}
                         value={value}
                         onValueChange={onChange}
                         {...field}
@@ -127,8 +125,6 @@ export function EditSetDialog({ set, exerciseName }: EditSetDialogProps) {
                     <FormLabel>回数</FormLabel>
                     <FormControl>
                       <NumericInput
-                        step="0.1"
-                        min={0}
                         value={value}
                         onValueChange={onChange}
                         {...field}
