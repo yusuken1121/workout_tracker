@@ -30,7 +30,7 @@ export function WorkoutDayButton({
         "data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground",
         hasWorkout &&
           !modifiers.selected &&
-          "bg-blue-100 text-blue-900 hover:bg-blue-200 dark:bg-blue-950 dark:text-blue-100 dark:hover:bg-blue-900",
+          "bg-blue-100 text-blue-900 hover:bg-blue-200 dark:bg-primary/15 dark:text-primary dark:hover:bg-primary/25",
         className,
       )}
       {...props}
@@ -42,7 +42,7 @@ export function WorkoutDayButton({
             "h-1 w-1 rounded-full",
             modifiers.selected
               ? "bg-primary-foreground"
-              : "bg-blue-600 dark:bg-blue-300",
+              : "bg-blue-600 dark:bg-primary",
           )}
         />
       )}

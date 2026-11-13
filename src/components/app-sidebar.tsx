@@ -103,8 +103,8 @@ export function AppSidebar() {
               {activeState && item.activeColor && (
                 <div
                   className={cn(
-                    "ml-auto h-1.5 w-1.5 rounded-full",
-                    item.activeColor.replace("text-", "bg-"),
+                    "ml-auto h-1.5 w-1.5 rounded-full bg-current",
+                    item.activeColor,
                   )}
                 />
               )}
@@ -119,7 +119,7 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border bg-sidebar/50 backdrop-blur-xl">
       <SidebarHeader className="p-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-2 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold shadow-md">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold shadow-md dark:from-primary dark:to-primary dark:text-primary-foreground">
             N
           </div>
           <div className="flex flex-col gap-0.5 leading-none">

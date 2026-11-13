@@ -35,7 +35,7 @@ const WEEKS_SHOWN = 8
 const weekOptions = { weekStartsOn: WEEK_STARTS_ON }
 
 const chartConfig = {
-  totalVolumeKg: { label: "総負荷量 (kg)", color: "hsl(221, 83%, 53%)" },
+  totalVolumeKg: { label: "総負荷量 (kg)", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
 /** The last `count` weeks (oldest first), ending with the week containing `today`. */
